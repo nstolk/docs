@@ -97,7 +97,7 @@ You'll need to set up the DNS records for your domain with a DNS hosting service
 
 Next, you need to set up the DNS records on DigitalOcean. Log in at DigitalOcean, and go to the networking tab
 
-![text](DNS-record.png)
+![DNS Record](/img/DNS-record.png)
 
 Each domain and sub-domain needs a valid **A** and **AAAA** record.
 
