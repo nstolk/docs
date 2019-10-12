@@ -154,7 +154,7 @@ Open the Nginx configuration file:
 
     sudo nano /etc/nginx/sites-available/nicks.computer
 
-Paste the following contents in a new server block:
+Paste the following contents in the configuration file:
 
     upstream gitea {
         server 127.0.0.1:3000;
