@@ -34,7 +34,7 @@ Gitea will require a database to work. In this example we will create a database
 
 ## **Gitea environment setup**
 
-On our server we will create a user named `git` which will run Gitea. You can choose to skip this step if you're complacent with running commands as root.
+On our server we will create a user named `git` which will run Gitea. You can choose to skip adding a new user if you're complacent with running commands as root.
 
     sudo adduser \
     --system \
