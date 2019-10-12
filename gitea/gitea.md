@@ -1,6 +1,14 @@
 # **Gitea setup**
 
 ## **Table of contents**
+1. Prerequisites
+2. Database setup
+3. Gitea environment setup
+4. Install Gitea
+5. Create service to automatically start Gitea
+6. Configure Nginx
+7. Gitea Web Installation
+8. Miscellaneous
 
 ## **Prerequisites**
 
@@ -146,7 +154,7 @@ Open the Nginx configuration file
 
     sudo nano /etc/nginx/sites-available/nicks.computer
 
-Paste the following contents
+Paste the following contents in a new server block
 
     upstream gitea {
         server 127.0.0.1:3000;
@@ -178,7 +186,7 @@ Paste the following contents
 
 Navigate to the VPS website of your choice and add the A (and AAAA) records.
 
-![DNS Record](DNS-record.jpg "DNS Record")
+![DNS Record](/gitea/img/DNS-record.jpg "DNS Record")
 
 We'll assume that SSL was already previously configured for the domain `nicks.computer`. We'll refresh the certificate and add the new subdomain.
 
@@ -188,5 +196,53 @@ Select Expand (E), then select 1 (no further changes to the webserver configurat
 
 Certbot should automatically include the necessary links to the certificates in the subdomain server block.
 
+
+## **Gitea Web Installation**
 Navigate to `git.nicks.computer`, you should see this page
-![Gitea](gitea-homepage.png "Gitea Homepage")
+![Gitea](/gitea/img/gitea-homepage.png "Gitea Homepage")
+
+Go to `git.nicks.computer/install` and work your way through the installation process.
+
+Use the previously created database name, username and password here:
+
+![Gitea Database Settings](/gitea/img/gitea-db-settings.png "Database Settings")
+
+Here's an overview of what the general settings might look:
+
+![Gitea General Settings](/gitea/img/gitea-general-settings.png "General Settings")
+
+Make sure to take a glance at the optional settings, which I consider the most important settings of your Gitea server.
+
+I would strongly recommend to check the '**Disable Self-Registration**' box here, unless you don't mind strangers being able to create accounts and host their Git projects on your server :-)
+
+It's also recommended to make an administrator account before installing. As an administrator you'll be able to manage accounts, repositories and other settings.
+
+![Gitea Optional Settings](/gitea/img/gitea-optional-settings.png "Optional Settings")
+
+Now let the installation finish and login!
+
+## **Miscellaneous**
+
+Let's create a new repository:
+
+![Gitea New Repository](/gitea/img/gitea-new-repo.png)
+
+After creating a new repository you'll see the familiar layout of GitHub.
+
+Gitea will make a copy of all your repositories in
+
+    /home/git/gitea-repositories
+
+You can of course clone any repository on your Gitea instance to any directory on any machine you have access to.
+
+Gitea also comes with powerful CLI tools. We can create a new user:
+
+    gitea admin create-user --username test --password test --email test@example.com
+
+This will create user `test` with password `test`.
+
+![Gitea User Management](/gitea/img/gitea-admin-account-management.png "User Management")
+
+![Gitea Edit User](/gitea/img/gitea-edit-user.png "Edit User")
+
+
