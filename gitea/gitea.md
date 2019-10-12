@@ -136,13 +136,13 @@ Paste the following contents in the file:
     [Install]
     WantedBy=multi-user.target
 
-Enable and start Gitea
+Enable and start Gitea:
 
     sudo systemctl daemon-reload
     sudo systemctl enable gitea
     sudo systemctl start gitea
 
-Check Gitea's status
+Check Gitea's status:
 
     sudo systemctl status gitea
 
@@ -150,11 +150,11 @@ Check Gitea's status
 
 We'll assume you've already setup a basic Nginx config for your domain. In this example we've already configured the domain `nicks.computer` and now we want to add a subdomain where Gitea will run. The fully qualified domain name will be `git.nicks.computer`.
 
-Open the Nginx configuration file
+Open the Nginx configuration file:
 
     sudo nano /etc/nginx/sites-available/nicks.computer
 
-Paste the following contents in a new server block
+Paste the following contents in a new server block:
 
     upstream gitea {
         server 127.0.0.1:3000;
@@ -198,7 +198,8 @@ Certbot should automatically include the necessary links to the certificates in 
 
 
 ## **Gitea Web Installation**
-Navigate to `git.nicks.computer`, you should see this page
+Navigate to `git.nicks.computer`, you should see this page:
+
 ![Gitea](/gitea/img/gitea-homepage.png "Gitea Homepage")
 
 Go to `git.nicks.computer/install` and work your way through the installation process.
@@ -233,7 +234,7 @@ Gitea will make a copy of all your repositories in
 
     /home/git/gitea-repositories
 
-You can of course clone any repository on your Gitea instance to any directory on any machine you have access to.
+You can of course clone any repository on your Gitea instance to any directory on any machine you have access to. From here on out you can use any regular git commands.
 
 Gitea also comes with powerful CLI tools. We can create a new user:
 
