@@ -169,6 +169,11 @@ Add this block_nicksblock.php
             }
         }
 
+Add this to the language file
+
+    $string['blocktitle'] = 'Title for Nick\'s Block';
+
+
 ![](img/moodle_change_block_title.png)
 
 ![](img/moodle_block_title_changed.png)
@@ -180,3 +185,28 @@ Add this to block_nicksblock.php
     public function instance_allow_multiple() {
             return true; 
         }
+
+## Global configuration
+
+Create a new file called settings.php
+
+    <?php
+
+    $settings->add(new admin_setting_heading(
+        'headerconfig',
+        get_string('headerconfig', 'block_nicksblock'),
+        get_string('descconfig', 'block_nicksblock')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'nicksblock/Allow_HTML',
+        get_string('labelallowhtml', 'block_nicksblock'),
+        get_string('descallowhtml', 'block_nicksblock'),
+        '0'
+    ));
+
+Add the following function to block_nicksblock.php
+
+    function has_config() {
+        return true;
+    }
