@@ -210,3 +210,26 @@ Add the following function to block_nicksblock.php
     function has_config() {
         return true;
     }
+    
+Add the following function to block_nicksblock.php
+
+    public function instance_config_save($data, $nolongerused = false) {
+        if(get_config('nicksblock', 'Allow_HTML') == '0') {
+            $data->text = strip_tags($data->text);
+        }
+        
+        return parent::instance_config_save($data, $nolongerused);
+    }
+    
+Add these lines to your language file
+
+    $string['headerconfig'] = 'Nick\'s Block Configuration';
+    $string['descconfig'] = 'HTML settings';
+    $string['labelallowhtml'] = 'Allow HTML?';
+    $string['descallowhtml'] = 'Checking this option will strip HTML tags';
+    
+You'll find these settings (Site Administration -> Plugins -> Blocks -> Nick's Basic Block
+
+![](img/moodle_global_settings.png)
+    
+
