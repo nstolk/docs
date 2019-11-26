@@ -231,5 +231,41 @@ Add these lines to your language file
 You'll find these settings (Site Administration -> Plugins -> Blocks -> Nick's Basic Block
 
 ![](img/moodle_global_settings.png)
-    
 
+## Eye Candy
+
+The following code will hide the block header
+
+    public function hide_header() {
+        return true;
+    }
+
+You can also add custom HTML attributes to your block.
+The following code will add the class 'block_nicksblock' to the div element containing our block.
+
+    public function instance_config_save($data, $nolongerused = false) {
+        if(get_config('nicksblock', 'Allow_HTML') == '0') {
+            $data->text = strip_tags($data->text);
+        }
+
+        return parent::instance_config_save($data, $nolongerused);
+    }
+    
+Before:
+
+![](img/moodle_attributes_before.png)
+
+After:
+
+![](img/moodle_attributes_after.png)
+    
+## Block restriction
+
+You can restrict adding your block to certain pages only (site home, or admin page)
+Here is such an example
+
+    public function applicable_formats() {
+        return array('site-index' => true);
+    }
+
+The above code will only allow you to add Nick's Block to the site home page.
