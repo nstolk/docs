@@ -73,11 +73,11 @@
 
 When you reload your Moodle site, it'll redirect to the plugin check page.
 
-![Plugin check](img/moodle_plugins_check.png)
+![Plugin check](img/basic_block/moodle_plugins_check.png)
 
 Update the database, your plugin should now be added to your Moodle site.
 
-![](img/moodle_adding_plugin.png)
+![](img/basic_block/moodle_adding_plugin.png)
 
 
 ## Add your block
@@ -85,11 +85,11 @@ Update the database, your plugin should now be added to your Moodle site.
 You can now add your block by turning blocks editing on (click the gear icon or the button)
 Then click 'Add a block', and select Nick's HTML block.
 
-![](img/moodle_add_block.png)
+![](img/basic_block/moodle_add_block.png)
 
 The block should now appear on the page.
 
-![](img/moodle_nicks_block.png)
+![](img/basic_block/moodle_nicks_block.png)
 
 ## Block content
 
@@ -113,7 +113,7 @@ The block should now appear on the page.
         }
     }
 
-![](img/moodle_block_content.png)
+![](img/basic_block/moodle_block_content.png)
 
 ## Instance configuration
 
@@ -143,7 +143,7 @@ Add this line to the language file:
 You may need to clear your site's cache for this to show up.
 (Site Administration -> Development -> Purge all caches)
 
-![](img/moodle_example_string.png)
+![](img/basic_block/moodle_example_string.png)
 
 ## Customize the title of the block
 
@@ -174,9 +174,9 @@ Add this to the language file
     $string['blocktitle'] = 'Title for Nick\'s Block';
 
 
-![](img/moodle_change_block_title.png)
+![](img/basic_block/moodle_change_block_title.png)
 
-![](img/moodle_block_title_changed.png)
+![](img/basic_block/moodle_block_title_changed.png)
 
 ## Multiple instances of the same block
 
@@ -230,7 +230,7 @@ Add these lines to your language file
     
 You'll find these settings (Site Administration -> Plugins -> Blocks -> Nick's Basic Block
 
-![](img/moodle_global_settings.png)
+![](img/basic_block/moodle_global_settings.png)
 
 ## Eye Candy
 
@@ -253,11 +253,11 @@ The following code will add the class 'block_nicksblock' to the div element cont
     
 Before:
 
-![](img/moodle_attributes_before.png)
+![](img/basic_block/moodle_attributes_before.png)
 
 After:
 
-![](img/moodle_attributes_after.png)
+![](img/basic_block/moodle_attributes_after.png)
     
 ## Block restriction
 
