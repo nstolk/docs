@@ -2,15 +2,15 @@
 
     blocks/nicksblock
         |
-        |-- block_nicksblock.php
-        |
-        |-- /db
+        |-- db/
         |    |
         |    |-- access.php
         |
-        |-- /lang/en
+        |-- lang/en
         |    |
         |    |-- block_nicksblock.php
+        |
+        |-- block_nicksblock.php
         |
         |-- version.php
 
