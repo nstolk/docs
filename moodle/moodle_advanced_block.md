@@ -300,6 +300,11 @@ Replace the contents of the view.php with this
     $nicksblock->display();
     echo $OUTPUT->footer();
     
+ Add these lines to your language file
+     
+     $string['edithtml'] = 'Edit HTML';
+     $string['editpage'] = 'Edit page';
+    
 view.php will now have a header and the standard Moodle layout.
 Note here that  
 
@@ -316,3 +321,165 @@ If you click on 'Edit page', you'll see the query strings have changed, namely i
         view.php?id=0&courseid=1&blockid=21
 
 Currently the ID query string doesn't do anything **(?)**
+
+##Form elements and validation
+
+Create the file lib.php
+
+    <?php
+    
+    function block_nicksblock_images() {
+        return array(
+                html_writer::tag('img', '', array('alt' => get_string('red', 'block_nicksblock'), 'src' => "pix/picture0.gif")),
+                html_writer::tag('img', '', array('alt' => get_string('blue', 'block_nicksblock'), 'src' => "pix/picture1.gif")),
+                html_writer::tag('img', '', array('alt' => get_string('green', 'block_nicksblock'), 'src' => "pix/picture2.gif"))
+        );
+    }
+    
+Add these images to your pix directory and name them appropriately 
+
+![](img/advanced_block/picture0.gif)
+![](img/advanced_block/picture1.gif)
+![](img/advanced_block/picture2.gif)
+
+
+Replace the contents of nicksblock_form.php with the following
+
+    <?php
+    
+    require_once("{$CFG->libdir}/formslib.php");
+    require_once($CFG->dirroot.'/blocks/nicksblock/lib.php');
+    
+    class nicksblock_form extends moodleform {
+    
+        function definition() {
+            // Quick form
+            $mform =& $this->_form;
+            $mform->addElement('header', 'displayinfo', get_string('textfields', 'block_nicksblock'));
+    
+            // Add page title element
+            $mform->addElement('text', 'pagetitle', get_string('pagetitle', 'block_nicksblock'));
+            $mform->setType('pagetitle', PARAM_RAW);
+            $mform->addRule('pagetitle', null, 'required', null, 'client');
+    
+            // Add display text field
+            $mform->addElement('htmleditor', 'displaytext', get_string('displayedhtml', 'block_nicksblock'));
+            $mform->setType('displaytext', PARAM_RAW);
+            $mform->addRule('displaytext', null, 'required', null. 'client');
+    
+            // Add filename selection
+            $mform->addElement('filepicker', 'filename', get_string('file'), null, array('accepted_types' => '*'));
+    
+            // Add picture fields grouping
+            $mform->addElement('header', 'picfield', get_string('picturefields', 'block_nicksblock'), null, false);
+    
+            // Add display picture yes / no option
+            $mform->addElement('selectyesno', 'displaypicture', get_string('displaypicture', 'block_nicksblock'));
+            $mform->setDefault('displaypicture', 1);
+    
+            // Add image selector radio buttons
+            $images = block_nicksblock_images();
+            $radioarray = array();
+            for ($i = 0; $i < count($images); $i++) {
+                $radioarray[] =& $mform->createElement('radio', 'picture', '', $images[$i], $i);
+            }
+            $mform->addGroup($radioarray, 'radioar', get_string('pictureselect', 'block_nicksblock'), array(' '), false);
+    
+            // Add description field
+            $attributes = array('size' => '50', 'maxlength' => '100');
+            $mform->addElement('text', 'description', get_string('picturedesc', 'block_nicksblock'), $attributes);
+            $mform->setType('description', PARAM_TEXT);
+    
+            // Add optional grouping
+            $mform->addElement('header', 'optional', get_string('optional', 'form'), null, false);
+    
+            // Add date_time selector in optional area
+            $mform->addElement('date_time_selector', 'displaydate', get_string('displaydate', 'block_nicksblock'), array('optional' => true));
+            $mform->setAdvanced('optional');
+    
+            // Hidden elements, these are required
+            $mform->addElement('hidden', 'blockid');
+            $mform->addElement('hidden', 'courseid');
+    
+            $this->add_action_buttons();
+        }
+    }
+    
+In the above code we require the library lib.php which will write the html for our images and append the images to the radio buttons.
+
+Our updated view.php looks like this
+
+    <?php
+    
+    require_once('../../config.php');
+    require_once('nicksblock_form.php');
+    
+    global $DB, $OUTPUT, $PAGE;
+    
+    $courseid = required_param('courseid', PARAM_INT);
+    $blockid = required_param('blockid', PARAM_INT);
+    $id = optional_param('id', 0, PARAM_INT);
+    
+    if (!$course = $DB->get_record('course', array('id' => $courseid))) {
+        print_error('invalidcourse', 'block_nicksblock', $courseid);
+    }
+    
+    require_login($course);
+    
+    $PAGE->set_url('/blocks/nicksblock/view.php', array('id' => $courseid));
+    $PAGE->set_pagelayout('standard');
+    $PAGE->set_heading(get_string('edithtml', 'block_nicksblock'));
+    
+    $settingsnode = $PAGE->settingsnav->add(get_string('nicksblock', 'block_nicksblock'));
+    $editurl = new moodle_url('/blocks/nicksblock/view.php', array('id' => $id, 'courseid' => $courseid, 'blockid' => $blockid));
+    $editnode = $settingsnode->add(get_string('editpage', 'block_nicksblock'), $editurl);
+    $editnode->make_active();
+    
+    $nicksblock = new nicksblock_form();
+    
+    $toform['blockid'] = $blockid;
+    $toform['courseid'] = $courseid;
+    $nicksblock->set_data($toform);
+    
+    if ($nicksblock->is_cancelled()) {
+        // Cancelled forms redirect to the course main page.
+        $courseurl = new moodle_url('/course/view.php', array('id' => $id));
+        redirect($courseurl);
+    } else if ($fromform = $nicksblock->get_data()) {
+        // We need to add code to appropriately act on and store the submitted data
+        // but for now we will just redirect back to the course main page.
+        $courseurl = new moodle_url('/course/view.php', array('id' => $courseid));
+        print_object($fromform);
+        //redirect($courseurl);
+    } else {
+        // form didn't validate or this is the first display
+        $site = get_site();
+        echo $OUTPUT->header();
+        $nicksblock->display();
+        echo $OUTPUT->footer();
+    }
+
+Add these lines to your language file
+
+    $string['pagetitle'] = 'Page title';
+    $string['displayedhtml'] = 'Displayed HTML';
+    $string['picturefields'] = 'Picture';
+    $string['displaypicture'] = 'Display picture?';
+    $string['pictureselect'] = 'Select a picture';
+    $string['picturedesc'] = 'Picture description';
+    $string['displaydate'] = 'Date and time';
+    
+At some point, I changed the value of the string textfields from 'text fields' to 'form fields' in my language file
+Here's the edited string
+
+    $string['textfields'] = 'Text fields';
+
+Now that we have created form fields, let's view them and enter data.
+
+![](img/advanced_block/moodle_form_fields.png)
+
+When we hit submit, for now we're just printing the result with **print_object** in view.php
+
+![](img/advanced_block/moodle_form_results.png)
+
+##Creating a database
