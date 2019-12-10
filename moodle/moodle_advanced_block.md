@@ -478,8 +478,67 @@ Now that we have created form fields, let's view them and enter data.
 
 ![](img/advanced_block/moodle_form_fields.png)
 
-When we hit submit, for now we're just printing the result with **print_object** in view.php
+When we hit submit, for now we're just printing the result with **print_object()** in view.php
 
 ![](img/advanced_block/moodle_form_results.png)
 
 ##Creating a database
+
+Moodle comes bundled with an editor that allows you to setup database tables. This XMLDB also allows you to define every column and table settings.
+
+![](img/advanced_block/moodle_xmldb_loaded_table.png)
+
+The image above shows a table that is loaded within Moodle. This does NOT mean the table actually exists on your Moodle site! More about this later.
+For now, click on create.
+
+![](img/advanced_block/moodle_xmldb_editor.png)
+
+Now click on edit
+
+![](img/advanced_block/moodle_xmldb_table_overview.png)
+
+You'll see the overview of your table. On a fresh table this will only show the id column.
+You can click on new field to create a new column.
+If you have an existing field/column, and click on edit, you'll see this
+
+![](img/advanced_block/moodle_xmldb_column_edit.png)
+
+Earlier I mentioned that while the table might be 'created', it doesn't exist in the Moodle database yet.
+There are multiple ways to fix this:
+Either with an upgrade.php file to keep all instances of the block you want to link the database tables to, or deleting all instances of that block.
+
+Both options will require an install.xml file to be present in the db folder.
+If you have created columns for your database you can download the XML file by clicking on the XML button on the tables overview page.
+
+Here's what the XML file looks like for nicksblock
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <XMLDB PATH="blocks/nicksblock/db" VERSION="20191204" COMMENT="XMLDB file for Moodle blocks/nicksblock"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+    >
+      <TABLES>
+        <TABLE NAME="block_nicksblock" COMMENT="Table structure for page views for nicksblock.">
+          <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+            <FIELD NAME="blockid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Registers the block instance id"/>
+            <FIELD NAME="pagetitle" TYPE="char" LENGTH="25" NOTNULL="true" SEQUENCE="false" COMMENT="Displays the title of the page."/>
+            <FIELD NAME="displaytext" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Displays text on nicksblock page, potentially as HTML"/>
+            <FIELD NAME="format" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Contains the integer value that represents the format the text was entered in."/>
+            <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Stores the name of a file the instructor posts on the nicksblock page, which students can then download or view."/>
+            <FIELD NAME="picture" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The URL for the user's chosen picture is in a predefined static variable that associates a number to a picture. This will allow the a
+    ddition of more pictures later if necessary, or for changing the current pictures' URLs without updating the database. Because only the number is stored the database field should be created as an int rather than a char."/>
+            <FIELD NAME="description" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="The description field that will be displayed on the page."/>
+            <FIELD NAME="displaypicture" TYPE="int" LENGTH="1" NOTNULL="true" SEQUENCE="false" COMMENT="The displaypicture field will be the &quot;yes&quot; or &quot;no&quot; question on the form."/>
+            <FIELD NAME="displaydate" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Displays the date as a UNIX epoch timestamp."/>
+          </FIELDS>
+          <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+          </KEYS>
+        </TABLE>
+      </TABLES>
+    </XMLDB>
+
+
+
+
