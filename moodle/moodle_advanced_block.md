@@ -538,6 +538,158 @@ Here's what the XML file looks like for nicksblock
         </TABLE>
       </TABLES>
     </XMLDB>
+    
+ ## Refining the user interface
+ 
+ Now that we can create pages, we obviously want to view them
+ 
+ Change the contents of get_content() in block_nicksblock.php
+ 
+     public function get_content() {
+             global $COURSE, $DB;
+     
+             if (!empty($this->config->text)) {
+                 $this->content->text = $this->config->text;
+             }
+     
+             if ($nicksblockpages = $DB->get_records('block_nicksblock', array('blockid' => $this->instance->id))) {
+                 $this->content->text .= html_writer::start_tag('ul');
+                 foreach ($nicksblockpages as $nicksblockpage) {
+                     $pageurl = new moodle_url('/blocks/nicksblock/view.php',
+                             array(
+                                     'blockid' => $this->instance->id,
+                                     'courseid' => $COURSE->id,
+                                     'id' => $nicksblockpage->id,
+                                     'viewpage' => '1'
+                             ));
+                     $this->content->text .= html_writer::start_tag('li');
+                     $this->content->text .= html_writer::link($pageurl, $nicksblockpage->pagetitle);
+                     $this->content->text .= html_writer::end_tag('li');
+                 }
+                 $this->content->text .= html_writer::end_tag('ul');
+             }
+         }
+         
+In lib.php, create a new function **block_nicksblock_print_page()**
+
+    function block_nicksblock_print_page($nicksblock, $return = false) {
+        global $OUTPUT, $COURSE;
+        $display = $OUTPUT->heading($nicksblock->pagetitle);
+        // Opening tag for the box
+        $display = $OUTPUT->box_start();
+    
+        if ($nicksblock->displaydate) {
+            $display .= userdate($nicksblock->displaydate);
+        }
+    
+        $display .= html_writer::start_tag('div', array('class' => 'nicksblock displaydate'));
+        $display .= userdate($nicksblock->displaydate);
+        $display .= html_writer::end_tag('div');
+    
+        $display .= clean_text($nicksblock->displaytext);
+    
+        // Closing tag for the box
+        $display .= $OUTPUT->box_end();
+    
+        if ($nicksblock->displaypicture) {
+            $display .= $OUTPUT->box_start();
+            $images = block_nicksblock_images();
+            $display .= $images[$nicksblock->picture];
+            $display .= html_writer::start_tag('p');
+            $display .= clean_text($nicksblock->description);
+            $display .= html_writer::end_tag('p');
+            $display .= $OUTPUT->box_end();
+        }
+    
+        if ($return) {
+            return $display;
+        } else {
+            echo $display;
+        }
+    }
+    
+This takes care of what to render when this function is called
+
+Now we need to make some small changes to view.php, for convenience I'll show the contents of the whole file
+
+    <?php
+    
+    require_once('../../config.php');
+    require_once('nicksblock_form.php');
+    
+    global $DB, $OUTPUT, $PAGE;
+    
+    $courseid = required_param('courseid', PARAM_INT);
+    $blockid = required_param('blockid', PARAM_INT);
+    $id = optional_param('id', 0, PARAM_INT);
+    $viewpage = optional_param('viewpage', false, PARAM_BOOL);
+    
+    if (!$course = $DB->get_record('course', array('id' => $courseid))) {
+        print_error('invalidcourse', 'block_nicksblock', $courseid);
+    }
+    
+    require_login($course);
+    
+    $PAGE->set_url('/blocks/nicksblock/view.php', array('id' => $courseid));
+    $PAGE->set_pagelayout('standard');
+    $PAGE->set_heading(get_string('edithtml', 'block_nicksblock'));
+    
+    $settingsnode = $PAGE->settingsnav->add(get_string('nicksblock', 'block_nicksblock'));
+    $editurl = new moodle_url('/blocks/nicksblock/view.php', array('id' => $id, 'courseid' => $courseid, 'blockid' => $blockid));
+    $editnode = $settingsnode->add(get_string('editpage', 'block_nicksblock'), $editurl);
+    $editnode->make_active();
+    
+    $nicksblock = new nicksblock_form();
+    
+    $toform['blockid'] = $blockid;
+    $toform['courseid'] = $courseid;
+    $nicksblock->set_data($toform);
+    
+    if ($nicksblock->is_cancelled()) {
+        // Cancelled forms redirect to the course main page.
+        $courseurl = new moodle_url('/course/view.php', array('id' => $id));
+        redirect($courseurl);
+    } else if ($fromform = $nicksblock->get_data()) {
+        // We need to add code to appropriately act on and store the submitted data
+        // but for now we will just redirect back to the course main page.
+        $courseurl = new moodle_url('/course/view.php', array('id' => $courseid));
+        //print_object($fromform);
+        // We need to add code to appropriately act on and store the submitted data
+        if (!$DB->insert_record('block_nicksblock', $fromform)) {
+            print_error('inserterror', 'block_nicksblock');
+        }
+        //redirect($courseurl);
+    } else {
+        // form didn't validate or this is the first display
+        $site = get_site();
+        echo $OUTPUT->header();
+        
+        if ($viewpage) {
+            $nicksblockpage = $DB->get_record('block_nicksblock', array('id' => $id));
+            block_nicksblock_print_page($nicksblockpage);
+        } else {
+            $nicksblock->display();
+        }
+        
+        echo $OUTPUT->footer();
+    }
+    
+Add some styling to the viewpage by creating styles.css in the nicksblock folder root 
+
+    .nicksblock .displaydate {
+        font-size: .8em;
+        text-align: center;
+    }
+
+When we view an instance of our block we will see this
+
+![](img/advanced_block/moodle_block_instance_list_of_pages.png)
+
+Click on one of these links and for now you'll see the date, the displaytext, picture and picture description columns displayed
+
+![](img/advanced_block/moodle_page_view.png)
+
+Right now we have no way of editing this page, let's add that next
 
 
 
