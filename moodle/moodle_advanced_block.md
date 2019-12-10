@@ -691,6 +691,138 @@ Click on one of these links and for now you'll see the date, the displaytext, pi
 
 Right now we have no way of editing this page, let's add that next
 
+## Add editing capability
+
+Once again we're making changes to block_nicksblock.php's get_content() function
+
+    public function get_content() {
+            global $COURSE, $DB, $PAGE;
+    
+            if (!empty($this->config->text)) {
+                $this->content->text = $this->config->text;
+            }
+    
+            $canmanage = $PAGE->user_is_editing($this->instance->id);
+    
+            if ($nicksblockpages = $DB->get_records('block_nicksblock', array('blockid' => $this->instance->id))) {
+                $this->content->text .= html_writer::start_tag('ul');
+                foreach ($nicksblockpages as $nicksblockpage) {
+                    if ($canmanage) {
+                        $pageparam = array(
+                                'blockid' => $this->instance->id,
+                                'courseid' => $COURSE->id,
+                                'id' => $nicksblockpage->id
+                        );
+                        $editurl = new moodle_url('/blocks/nicksblock/view.php', $pageparam);
+                        $editpicurl = new moodle_url('pix/t/edit.gif');
+                        $edit = html_writer::link($editurl, html_writer::tag('img', '', array('src' => $editpicurl, 'alt' => get_string('edit'))));
+                    } else {
+                        $edit = '';
+                    }
+                    $pageurl = new moodle_url('/blocks/nicksblock/view.php',
+                            array(
+                                    'blockid' => $this->instance->id,
+                                    'courseid' => $COURSE->id,
+                                    'id' => $nicksblockpage->id,
+                                    'viewpage' => '1'
+                            ));
+                    $this->content->text .= html_writer::start_tag('li');
+                    $this->content->text .= html_writer::link($pageurl, $nicksblockpage->pagetitle);
+                    $this->content->text .= ' ' . $edit;
+                    $this->content->text .= html_writer::end_tag('li');
+                }
+                $this->content->text .= html_writer::end_tag('ul');
+            }
+        }
+        
+In nicksblock_form.php, add this line somewhere in the definition function. Preferably at the top
+
+    $mform->addElement('hidden','id','0');
+    
+Once again a bunch of changes to the view.php file, it now looks like this
+
+    <?php
+    
+    require_once('../../config.php');
+    require_once('nicksblock_form.php');
+    
+    global $DB, $OUTPUT, $PAGE;
+    
+    $courseid = required_param('courseid', PARAM_INT);
+    $blockid = required_param('blockid', PARAM_INT);
+    $id = optional_param('id', 0, PARAM_INT);
+    $viewpage = optional_param('viewpage', false, PARAM_BOOL);
+    
+    if (!$course = $DB->get_record('course', array('id' => $courseid))) {
+        print_error('invalidcourse', 'block_nicksblock', $courseid);
+    }
+    
+    require_login($course);
+    
+    $PAGE->set_url('/blocks/nicksblock/view.php', array('id' => $courseid));
+    $PAGE->set_pagelayout('standard');
+    $PAGE->set_heading(get_string('edithtml', 'block_nicksblock'));
+    
+    $settingsnode = $PAGE->settingsnav->add(get_string('nicksblock', 'block_nicksblock'));
+    $editurl = new moodle_url('/blocks/nicksblock/view.php', array('id' => $id, 'courseid' => $courseid, 'blockid' => $blockid));
+    $editnode = $settingsnode->add(get_string('editpage', 'block_nicksblock'), $editurl);
+    $editnode->make_active();
+    
+    $nicksblock = new nicksblock_form();
+    
+    $toform['blockid'] = $blockid;
+    $toform['courseid'] = $courseid;
+    $toform['id'] = $id;
+    $nicksblock->set_data($toform);
+    
+    if ($nicksblock->is_cancelled()) {
+        // Cancelled forms redirect to the course main page.
+        $courseurl = new moodle_url('/course/view.php', array('id' => $id));
+        redirect($courseurl);
+    } else if ($fromform = $nicksblock->get_data()) {
+        // We need to add code to appropriately act on and store the submitted data
+        if ($fromform->id != 0) {
+            if (!$DB->update_record('block_nicksblock', $fromform)) {
+                print_error('updateerror', 'block_nicksblock');
+            }
+        } else {
+            if (!$DB->insert_record('block_nicksblock', $fromform)) {
+                print_error('inserterror', 'block_nicksblock');
+            }
+        }
+    } else {
+        // form didn't validate or this is the first display
+        $site = get_site();
+        echo $OUTPUT->header();
+    
+        if ($id) {
+            $nicksblockpage = $DB->get_record('block_nicksblock', array('id' => $id));
+            if ($viewpage) {
+                block_nicksblock_print_page($nicksblockpage);
+            } else {
+                // If viewpage parameter is not in the URL, load in existing data as form defaults. This statement is reached when you are trying to edit a form
+                $nicksblock->set_data($nicksblockpage);
+                $nicksblock->display();
+            }
+        } else {
+            // No ID supplied, so just display the data we have received from the form
+            $nicksblock->display();
+        }
+    
+        echo $OUTPUT->footer();
+    }
+
+If blocks editing is turned on, the nicksblock block instance looks like this
+
+![](img/advanced_block/moodle_block_instance_edit_page.png)
+
+The query strings for the page link and edit link are almost identical, except that the page link has a viewpage query string in the URL
+In view.php, we setup the conditions so that if viewpage is in the URL, it'll display the page by calling the block_nicksblock_print_page function.
+
+If the viewpage parameter is missing, we will instead be redirected to the edit page, where form data will be filled in, thanks to the set_data function.
+
+![](img/advanced_block/moodle_form_fields_set_data.png)
 
 
+**TODO**: Read about the different navigation options
 
