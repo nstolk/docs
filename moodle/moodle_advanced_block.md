@@ -931,10 +931,167 @@ Add this function to block_nicksblock.php
         global $DB;
         $DB->delete_records('block_simplehtml', array('blockid' => $this->instance->id));
     }
+    
+Add this line to your language file
+
+    $string['deletepage'] = 'Are you sure you want to delete this page?';
 
 Now when you click the black X, you'll see this
 
 ![](img/advanced_block/moodle_delete_confirmation.png)
+
+Clicking on either of the buttons will take you back to the navigation page (Change this later?)
+Clicking on continue will, as expected, delete the instance of the page and all instances of it.
+
+## Defining roles for our block
+
+Early on in the basic block we created the access.php file in the db directory, we're going to add capabilities.
+This is what the file will look like
+
+    <?php
+    
+    defined('MOODLE_INTERNAL') || die();
+    $capabilities = array(
+    
+            'block/nicksblock:myaddinstance' => array(
+                    'captype' => 'write',
+                    'contextlevel' => CONTEXT_SYSTEM,
+                    'archetypes' => array(
+                            'user' => CAP_ALLOW
+                    ),
+    
+                    'clonepermissionsfrom' => 'moodle/my:manageblocks'
+            ),
+    
+            'block/nicksblock:addinstance' => array(
+                    'riskbitmask' => RISK_SPAM | RISK_XSS,
+    
+                    'captype' => 'write',
+                    'contextlevel' => CONTEXT_BLOCK,
+                    'archetypes' => array(
+                            'editingteacher' => CAP_ALLOW,
+                            'manager' => CAP_ALLOW
+                    ),
+    
+                    'clonepermissionsfrom' => 'moodle/site:manageblocks'
+            ),
+    
+            'block/nicksblock:viewpages' => array(
+    
+                    'captype' => 'read',
+                    'contextlevel' => CONTEXT_COURSE,
+                    'legacy' => array(
+                            'guest' => CAP_PREVENT,
+                            'student' => CAP_ALLOW,
+                            'teacher' => CAP_ALLOW,
+                            'editingteacher' => CAP_ALLOW,
+                            'coursecreator' => CAP_ALLOW,
+                            'manager' => CAP_ALLOW
+                    )
+            ),
+    
+            'block/nicksblock:managepages' => array(
+    
+                    'captype' => 'read',
+                    'contextlevel' => CONTEXT_COURSE,
+                    'legacy' => array(
+                            'guest' => CAP_PREVENT,
+                            'student' => CAP_PREVENT,
+                            'teacher' => CAP_PREVENT,
+                            'editingteacher' => CAP_ALLOW,
+                            'coursecreator' => CAP_ALLOW,
+                            'manager' => CAP_ALLOW
+                    )
+            )
+    );
+    
+Add these lines to your language file
+
+    $string['nicksblock:viewpages'] = 'View Nicksblock Pages';
+    $string['nicksblock:managepages'] = 'Manage Nicksblock Pages';
+    
+The get_content() method will once again see changes, here's what the method will look like
+
+    public function get_content() {
+            global $COURSE, $DB, $PAGE;
+    
+            if (!empty($this->config->text)) {
+                $this->content->text = $this->config->text;
+            }
+    
+            $context = context_course::instance($COURSE->id);
+    
+            if (has_capability('block/nicksblock:managepages', $context)) {
+                $url = new moodle_url('/blocks/nicksblock/view.php', array('blockid' => $this->instance->id, 'courseid' => $COURSE->id));
+                $this->content->footer = html_writer::link($url, get_string('addpage', 'block_nicksblock'));
+            } else {
+                $this->content->footer = '';
+            }
+    
+            $canmanage = has_capability('block/nicksblock:managepages', $context) && $PAGE->user_is_editing($this->instance->id);
+            $canview = has_capability('block/nicksblock:viewpages', $context);
+    
+            if ($nicksblockpages = $DB->get_records('block_nicksblock', array('blockid' => $this->instance->id))) {
+                $this->content->text .= html_writer::start_tag('ul');
+                foreach ($nicksblockpages as $nicksblockpage) {
+    
+                    if ($canmanage) {
+                        $pageparam = array(
+                                'blockid' => $this->instance->id,
+                                'courseid' => $COURSE->id,
+                                'id' => $nicksblockpage->id
+                        );
+                        $editurl = new moodle_url('/blocks/nicksblock/view.php', $pageparam);
+                        $editpicurl = new moodle_url('pix/t/edit.svg');
+                        $edit = html_writer::link($editurl, html_writer::tag('img', '', array('src' => $editpicurl, 'alt' => get_string('edit'))));
+                        // Delete
+                        $deleteparam = array('id' => $nicksblockpage->id, 'courseid' => $COURSE->id);
+                        $deleteurl = new moodle_url('/blocks/nicksblock/delete.php', $deleteparam);
+                        $deletepicurl = new moodle_url('/pix/t/delete.svg');
+                        $delete = html_writer::link($deleteurl, html_writer::tag('img', '', array('src' => $deletepicurl, 'alt' => get_string('delete'))));
+                    } else {
+                        $edit = '';
+                        $delete = '';
+                    }
+                    $pageurl = new moodle_url('/blocks/nicksblock/view.php',
+                            array(
+                                    'blockid' => $this->instance->id,
+                                    'courseid' => $COURSE->id,
+                                    'id' => $nicksblockpage->id,
+                                    'viewpage' => '1'
+                            ));
+                    $this->content->text .= html_writer::start_tag('li');
+    
+                    if ($canview) {
+                        $this->content->text .= html_writer::link($pageurl, $nicksblockpage->pagetitle);
+                    } else {
+                        $this->content->text .= html_writer::tag('div', $nicksblockpage->pagetitle);
+                    }
+                    $this->content->text .= ' ' . $edit;
+                    $this->content->text .= ' ' . $delete;
+                    $this->content->text .= html_writer::end_tag('li');
+                }
+                $this->content->text .= html_writer::end_tag('ul');
+            }
+        }
+    
+We are utilizing the newly added capabilities to check what to display to which role the logged in user has.
+An administrator, a teacher who is editing blocks or a course creator can see the add page link. A student or a guest cannot see the link.
+
+When viewing as an administrator, you'll see this
+
+![](img/advanced_block/moodle_add_a_new_page_capabilities.png)
+
+As a guest, you'll see this
+
+![](img/advanced_block/moodle_guest_capabilities.png)
+
+Add the following line after 
+
+    require_login($course)
+in view.php and delete.php
+
+    require_capability('block/nicksblock:managepages', context_course::instance($courseid));
 
 **TODO**: Read about the different navigation options
 
