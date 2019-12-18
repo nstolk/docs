@@ -714,7 +714,7 @@ Once again we're making changes to block_nicksblock.php's get_content() function
                                 'id' => $nicksblockpage->id
                         );
                         $editurl = new moodle_url('/blocks/nicksblock/view.php', $pageparam);
-                        $editpicurl = new moodle_url('pix/t/edit.gif');
+                        $editpicurl = new moodle_url('pix/t/edit.svg');
                         $edit = html_writer::link($editurl, html_writer::tag('img', '', array('src' => $editpicurl, 'alt' => get_string('edit'))));
                     } else {
                         $edit = '';
@@ -823,6 +823,118 @@ If the viewpage parameter is missing, we will instead be redirected to the edit 
 
 ![](img/advanced_block/moodle_form_fields_set_data.png)
 
+## Page Deletion
+
+We are once again making changes to the **get_content()** function in **block_nicksblock.php**
+
+    public function get_content() {
+            global $COURSE, $DB, $PAGE;
+    
+            if (!empty($this->config->text)) {
+                $this->content->text = $this->config->text;
+            }
+    
+            $canmanage = $PAGE->user_is_editing($this->instance->id);
+    
+            if ($nicksblockpages = $DB->get_records('block_nicksblock', array('blockid' => $this->instance->id))) {
+                $this->content->text .= html_writer::start_tag('ul');
+                foreach ($nicksblockpages as $nicksblockpage) {
+                    if ($canmanage) {
+                        $pageparam = array(
+                                'blockid' => $this->instance->id,
+                                'courseid' => $COURSE->id,
+                                'id' => $nicksblockpage->id
+                        );
+                        $editurl = new moodle_url('/blocks/nicksblock/view.php', $pageparam);
+                        $editpicurl = new moodle_url('pix/t/edit.svg');
+                        $edit = html_writer::link($editurl, html_writer::tag('img', '', array('src' => $editpicurl, 'alt' => get_string('edit'))));
+                        // Delete
+                        $deleteparam = array('id' => $nicksblockpage->id, 'courseid' => $COURSE->id);
+                        $deleteurl = new moodle_url('/blocks/nicksblock/delete.php', $deleteparam);
+                        $deletepicurl = new moodle_url('/pix/t/delete.svg');
+                        $delete = html_writer::link($deleteurl, html_writer::tag('img', '', array('src' => $deletepicurl, 'alt' => get_string('delete'))));
+                    } else {
+                        $edit = '';
+                        $delete = '';
+                    }
+                    $pageurl = new moodle_url('/blocks/nicksblock/view.php',
+                            array(
+                                    'blockid' => $this->instance->id,
+                                    'courseid' => $COURSE->id,
+                                    'id' => $nicksblockpage->id,
+                                    'viewpage' => '1'
+                            ));
+                    $this->content->text .= html_writer::start_tag('li');
+                    $this->content->text .= html_writer::link($pageurl, $nicksblockpage->pagetitle);
+                    $this->content->text .= ' ' . $edit;
+                    $this->content->text .= ' ' . $delete;
+                    $this->content->text .= html_writer::end_tag('li');
+                }
+                $this->content->text .= html_writer::end_tag('ul');
+            }
+        }
+
+A fix I've also done is change the moodle_url for the image extension from .gif to .svg. This should fix the broken images
+
+![](img/advanced_block/moodle_edit_and_delete_page.png)
+
+Right now clicking on the black X will tell you that the file is not found. Let's fix that
+
+Create the file **delete.php** in the root folder of nicksblock
+
+    <?php
+    
+    require_once('../../config.php');
+    
+    $courseid = required_param('courseid', PARAM_INT);
+    $id = optional_param('id', 0, PARAM_INT);
+    $confirm = optional_param('confirm', 0, PARAM_INT);
+    
+    if (!$course = $DB->get_record('course', array('id' => $courseid))) {
+        print_error('invalidcourse', 'block_nicksblock', $courseid);
+    }
+    
+    require_login($course);
+    
+    if (!$nicksblockpage = $DB->get_record('block_nicksblock', array('id' => $id))) {
+        print_error('nopage', 'block_nicksblock', '', $id);
+    }
+    
+    $site = get_site();
+    $PAGE->set_url('/blocks/nicksblock/view.php', array('id' => $id, 'courseid' => $courseid));
+    $heading = $site->fullname . ' :: ' . $course->shortname . ' :: ' . $nicksblockpage->pagetitle;
+    $PAGE->set_heading($heading);
+    
+    if (!$confirm) {
+        $optionsno = new moodle_url('/course/view.php', array('id' => $courseid));
+        $optionsyes = new moodle_url('/blocks/nicksblock/delete.php',
+                array('id' => $id, 'courseid' => $courseid, 'confirm' => 1, 'sesskey' => sesskey()));
+        echo $OUTPUT->confirm(get_string('deletepage', 'block_nicksblock', $nicksblockpage->pagetitle), $optionsyes, $optionsno);
+    } else {
+        if (confirm_sesskey()) {
+            if (!$DB->delete_records('block_nicksblock', array('id' => $id))) {
+                print_error('deleteerror', 'block_nicksblock');
+            }
+        } else {
+            print_error('sessionerror', 'block_nicksblock');
+        }
+        $url = new moodle_url('/course/view.php', array('id' => $courseid));
+        redirect($url);
+    }
+    
+    echo $OUTPUT->header();
+    echo $OUTPUT->footer();
+    
+Add this function to block_nicksblock.php
+
+    public function instance_delete() {
+        global $DB;
+        $DB->delete_records('block_simplehtml', array('blockid' => $this->instance->id));
+    }
+
+Now when you click the black X, you'll see this
+
+![](img/advanced_block/moodle_delete_confirmation.png)
 
 **TODO**: Read about the different navigation options
 
